@@ -36,7 +36,7 @@ impl ClassFileParser {
         Ok(u16::from_be_bytes(bytes))
     }
 
-    // A u4 in the JVM Class File spec is the same as
+    // A u4 in the JVM Class File spec is the same as a u32 in Rust.
     fn read_u4(&mut self) -> ClassParserResult<u32> {
         let array: Vec<u8> = self.read_n_bytes(4)?;
         let bytes = array
