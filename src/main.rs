@@ -15,5 +15,5 @@ fn main() {
         Err(error) => return eprintln!("Failed to parse class file: {:?}", error),
     };
 
-    println!("Parsed class file: {:?}", class);
+    println!("Parsed class file: {:#?}", class);
 }

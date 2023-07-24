@@ -1,10 +1,11 @@
-use crate::HexValue;
+use crate::{ConstantPoolTag, HexValue};
 
 pub type ClassParserResult<T> = Result<T, ClassParserError>;
 
 #[derive(Debug)]
 pub enum ClassParserError {
     InvalidMagic(HexValue),
+    UnknownConstantTag(ConstantPoolTag),
     FailedToRead,
     UnexpectedEOF,
 }
