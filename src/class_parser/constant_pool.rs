@@ -49,6 +49,19 @@ impl From<u8> for ConstantPoolTag {
     }
 }
 
+// Used for referencing constant pools before they are resolved.
+#[derive(Debug)]
+pub enum ConstantPoolReference {
+    Unresolved { index: u16 },
+    Resolved(Box<dyn ConstantPoolEntry>),
+}
+
+impl From<u16> for ConstantPoolReference {
+    fn from(value: u16) -> Self {
+        ConstantPoolReference::Unresolved { index: value }
+    }
+}
+
 // https://docs.oracle.com/javase/specs/jvms/se17/html/jvms-4.html#jvms-4.4
 pub trait ConstantPoolEntry: fmt::Debug {
     fn parse(parser: &mut ClassFileParser, tag: ConstantPoolTag) -> ClassParserResult<Self>
@@ -56,7 +69,6 @@ pub trait ConstantPoolEntry: fmt::Debug {
         Self: Sized;
 }
 
-// https://docs.oracle.com/javase/specs/jvms/se17/html/jvms-4.html#jvms-4.4.2
 #[derive(Debug)]
 pub enum ReferenceType {
     Field,
@@ -64,11 +76,13 @@ pub enum ReferenceType {
     InterfaceMethod,
 }
 
+// https://docs.oracle.com/javase/specs/jvms/se17/html/jvms-4.html#jvms-4.4.2
 #[derive(Debug)]
 pub struct ReferenceConstant {
     reference_type: ReferenceType,
-    class_index: u16,
-    name_and_type_index: u16,
+
+    class: ConstantPoolReference,
+    name_and_type: ConstantPoolReference,
 }
 
 impl ConstantPoolEntry for ReferenceConstant {
@@ -88,15 +102,15 @@ impl ConstantPoolEntry for ReferenceConstant {
 
         Ok(ReferenceConstant {
             reference_type,
-            class_index,
-            name_and_type_index,
+            class: class_index.into(),
+            name_and_type: name_and_type_index.into(),
         })
     }
 }
 
 #[derive(Debug)]
 pub struct ClassConstant {
-    name_index: u16,
+    name: ConstantPoolReference,
 }
 
 impl ConstantPoolEntry for ClassConstant {
@@ -105,15 +119,17 @@ impl ConstantPoolEntry for ClassConstant {
         _tag: ConstantPoolTag,
     ) -> ClassParserResult<ClassConstant> {
         let name_index: u16 = parser.read_u2()?;
-        Ok(ClassConstant { name_index })
+        Ok(ClassConstant {
+            name: name_index.into(),
+        })
     }
 }
 
 // https://docs.oracle.com/javase/specs/jvms/se17/html/jvms-4.html#jvms-4.4.6
 #[derive(Debug)]
 pub struct NameAndTypeConstant {
-    name_index: u16,
-    descriptor_index: u16,
+    name: ConstantPoolReference,
+    descriptor: ConstantPoolReference,
 }
 
 impl ConstantPoolEntry for NameAndTypeConstant {
@@ -125,8 +141,8 @@ impl ConstantPoolEntry for NameAndTypeConstant {
         let descriptor_index: u16 = parser.read_u2()?;
 
         Ok(NameAndTypeConstant {
-            name_index,
-            descriptor_index,
+            name: name_index.into(),
+            descriptor: descriptor_index.into(),
         })
     }
 }
@@ -153,7 +169,7 @@ impl ConstantPoolEntry for UTF8Constant {
 // https://docs.oracle.com/javase/specs/jvms/se17/html/jvms-4.html#jvms-4.4.3
 #[derive(Debug)]
 pub struct StringConstant {
-    string_index: u16,
+    string: ConstantPoolReference,
 }
 
 impl ConstantPoolEntry for StringConstant {
@@ -162,6 +178,8 @@ impl ConstantPoolEntry for StringConstant {
         _tag: ConstantPoolTag,
     ) -> ClassParserResult<StringConstant> {
         let string_index = parser.read_u2()?;
-        Ok(StringConstant { string_index })
+        Ok(StringConstant {
+            string: string_index.into(),
+        })
     }
 }

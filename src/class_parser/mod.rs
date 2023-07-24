@@ -31,11 +31,18 @@ impl ClassFileParser {
             constant_pool.push(entry);
         }
 
+        let access_flags = self.read_u2()?;
+        let this_class = self.read_u2()?;
+        let super_class = self.read_u2()?;
+
         Ok(ClassFile {
             magic,
             minor_version,
             major_version,
             constant_pool,
+            access_flags,
+            this_class,
+            super_class,
         })
     }
 
